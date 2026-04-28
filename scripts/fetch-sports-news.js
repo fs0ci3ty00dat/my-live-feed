@@ -2,13 +2,22 @@ const fetch = require('node-fetch');
 const fs = require('fs');
 const path = require('path');
 
-async function main() {
-  const url = 'https://site.api.espn.com/apis/site/v2/sports/news?limit=12';
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`ESPN news error ${res.status}`);
-  const data = await res.json();
-  const articles = data.articles || [];
+const sources = [
+  { sport: 'soccer',     league: 'eng.1', label: 'Soccer' },
+  { sport: 'basketball', league: 'nba',   label: 'NBA' },
+  { sport: 'football',   league: 'nfl',   label: 'NFL' },
+  { sport: 'hockey',     league: 'nhl',   label: 'NHL' },
+];
 
+async function fetchNews(sport, league) {
+  const url = `https://site.api.espn.com/apis/site/v2/sports/${sport}/${league}/news?limit=3`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`ESPN news error ${res.status} for ${league}`);
+  const data = await res.json();
+  return data.articles || [];
+}
+
+async function main() {
   const timestamp = new Date().toUTCString();
   let html = `<!DOCTYPE html>
 <html>
@@ -18,15 +27,17 @@ async function main() {
 <p>Last updated: ${timestamp}</p>
 `;
 
-  for (let i = 0; i < articles.length; i++) {
-    const a = articles[i];
-    const sport = a.categories?.find(c => c.type === 'league')?.description
-               || a.categories?.[0]?.description
-               || '';
-    const tag = sport ? ` [${sport}]` : '';
-    html += `<p>${i + 1}. ${a.headline}${tag}</p>\n`;
-    if (a.description) {
-      html += `<p>${a.description}</p>\n`;
+  for (const { sport, league, label } of sources) {
+    try {
+      const articles = await fetchNews(sport, league);
+      html += `<h2>${label}</h2>\n`;
+      for (const a of articles) {
+        html += `<p>${a.headline}</p>\n`;
+        if (a.description) html += `<p>${a.description}</p>\n`;
+      }
+    } catch (err) {
+      html += `<h2>${label}</h2>\n<p>Unable to fetch</p>\n`;
+      console.error(err.message);
     }
   }
 
