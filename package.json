@@ -1,0 +1,12 @@
+{
+  "name": "my-live-feed",
+  "version": "1.0.0",
+  "scripts": {
+    "fetch-scores": "node scripts/fetch-scores.js",
+    "fetch-news": "node scripts/fetch-news.js",
+    "fetch-sports-news": "node scripts/fetch-sports-news.js"
+  },
+  "dependencies": {
+    "node-fetch": "^2.7.0"
+  }
+}
