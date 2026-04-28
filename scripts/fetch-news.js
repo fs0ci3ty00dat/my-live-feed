@@ -13,8 +13,12 @@ const sections = [
   { id: 'environment', label: 'Environment' },
 ];
 
+function stripHtml(str) {
+  return str.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+}
+
 async function fetchSection(sectionId) {
-  const url = `${BASE_URL}?section=${sectionId}&page-size=5&order-by=newest&show-fields=trailText&api-key=${API_KEY}`;
+  const url = `${BASE_URL}?section=${sectionId}&page-size=5&order-by=newest&show-fields=trailText,standfirst&api-key=${API_KEY}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Guardian API error ${res.status} for section ${sectionId}`);
   const data = await res.json();
@@ -37,8 +41,9 @@ async function main() {
       html += `<h2>${section.label}</h2>\n`;
       for (const article of articles) {
         html += `<p>${article.webTitle}</p>\n`;
-        if (article.fields?.trailText) {
-          html += `<p>${article.fields.trailText}</p>\n`;
+        const summary = article.fields?.trailText || article.fields?.standfirst || '';
+        if (summary) {
+          html += `<p>${stripHtml(summary)}</p>\n`;
         }
       }
     } catch (err) {
